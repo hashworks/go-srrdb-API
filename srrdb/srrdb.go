@@ -175,7 +175,12 @@ func UploadSRRs(fps []string, jar *cookiejar.Jar) (SRRUploadResponse, error) {
 
 	req.Header.Add("Content-Type", w.FormDataContentType())
 	req.Header.Add("X-Requested-With", "XMLHttpRequest")
-	client := &http.Client{Jar: jar}
+	var client *http.Client
+	if jar != nil {
+		client = &http.Client{Jar: jar}
+	} else {
+		client = &http.Client{}
+	}
 	response, err := client.Do(req)
 	if err != nil {
 		return SRRUploadResponse{}, err
