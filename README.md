@@ -6,4 +6,4 @@ A Golang package to download & upload SRR files from [srrdb.com](http://www.srrd
 
 ## TODO
 
-* Add Tests
+* Add cookie jar tests
