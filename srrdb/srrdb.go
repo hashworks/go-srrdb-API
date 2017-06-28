@@ -18,7 +18,7 @@ import (
 	"strings"
 )
 
-const srrdbURL = "http://www.srrdb.com"
+const srrdbURL = "https://www.srrdb.com"
 
 // SearchResponse holds the results of a search.
 type SearchResponse struct {
@@ -121,7 +121,7 @@ func NewLoginCookieJar(u, p string) (*cookiejar.Jar, error) {
 		return errors.New("redirect")
 	}
 	response, err := client.PostForm(srrdbURL+"/account/login", v)
-	if err != nil && err.Error() != "Post /: redirect" {
+	if err != nil && err.Error()[len(err.Error())-8:] != "redirect" {
 		return &cookiejar.Jar{}, err
 	}
 	if !containsValidLoginCookie(response.Cookies()) {
