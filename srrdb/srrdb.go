@@ -220,7 +220,7 @@ func UploadStoredFile(fp, dirname, folder string, jar *cookiejar.Jar) (string, e
 	w.WriteField("add", "")
 	w.Close()
 
-	req, err := http.NewRequest("POST", "http://www.srrdb.com/release/add/"+dirname, &b)
+	req, err := http.NewRequest("POST", srrdbURL+"/release/add/"+dirname, &b)
 	if err != nil {
 		return "", err
 	}
