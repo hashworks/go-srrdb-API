@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
@@ -23,7 +24,7 @@ const srrdbURL = "https://www.srrdb.com"
 // SearchResponse holds the results of a search.
 type SearchResponse struct {
 	Results     []SearchResult `json:"results"`
-	ResultCount string         `json:"resultsCount"`
+	ResultCount int            `json:"resultsCount"`
 	Warnings    []string       `json:"warnings"`
 	Query       []string       `json:"query"`
 }
@@ -85,6 +86,9 @@ func Search(query string) (SearchResponse, error) {
 		return SearchResponse{}, err
 	}
 	var srrDBResponse SearchResponse
+
+	fmt.Println(string(bytes))
+
 	err = json.Unmarshal(bytes, &srrDBResponse)
 	return srrDBResponse, err
 }
