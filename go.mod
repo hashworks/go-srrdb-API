@@ -1,3 +1,3 @@
-module github.com/hashworks/go-srrdb-API/v2
+module github.com/hashworks/go-srrdb-API
 
 go 1.18
