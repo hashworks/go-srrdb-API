@@ -87,8 +87,6 @@ func Search(query string) (SearchResponse, error) {
 	}
 	var srrDBResponse SearchResponse
 
-	fmt.Println(string(bytes))
-
 	err = json.Unmarshal(bytes, &srrDBResponse)
 	return srrDBResponse, err
 }
