@@ -91,3 +91,39 @@ func TestSearch(t *testing.T) {
 		})
 	}
 }
+
+func TestDetails(t *testing.T) {
+	t.Parallel()
+	result, err := Details("Harry.Potter.And.The.Chamber.Of.Secrets.2002.720p.BluRay.x264-SiNNERS")
+	if err != nil {
+		t.Error(err.Error())
+	} else {
+		if result.Name == "" {
+			t.Error("Expected release name, got empty string.")
+		}
+	}
+}
+
+func TestNFO(t *testing.T) {
+	t.Parallel()
+	result, err := NFO("Harry.Potter.And.The.Chamber.Of.Secrets.2002.720p.BluRay.x264-SiNNERS")
+	if err != nil {
+		t.Error(err.Error())
+	} else {
+		if result.Release == "" {
+			t.Error("Expected release name, got empty string.")
+		}
+	}
+}
+
+func TestIMDB(t *testing.T) {
+	t.Parallel()
+	result, err := IMDB("Harry.Potter.And.The.Chamber.Of.Secrets.2002.720p.BluRay.x264-SiNNERS")
+	if err != nil {
+		t.Error(err.Error())
+	} else {
+		if result.Query == "" {
+			t.Error("Expected query string, got empty string.")
+		}
+	}
+}
