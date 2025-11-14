@@ -18,7 +18,7 @@ import (
 )
 
 const srrdbURL = "https://www.srrdb.com"
-const srrdbAPI = "https://api.srrdb.com/v1"
+const srrdbAPIURL = "https://api.srrdb.com/v1"
 
 // SearchResponse holds the results of a search.
 type SearchResponse struct {
@@ -48,6 +48,42 @@ type SRRUploadedFile struct {
 	Message string `json:"message"`
 }
 
+// DetailsFile represents a file in the details response.
+type DetailsFile struct {
+	Name string `json:"name"`
+	Size int64  `json:"size"`
+	CRC  string `json:"crc"`
+}
+
+// DetailsResponse holds the information about a single release.
+type DetailsResponse struct {
+	Name          string        `json:"name"`
+	Files         []DetailsFile `json:"files"`
+	ArchivedFiles []DetailsFile `json:"archived-files"`
+	Adds          []interface{} `json:"adds"`
+}
+
+// NFOResponse holds the list of NFO files with download URLs.
+type NFOResponse struct {
+	Release  string   `json:"release"`
+	NFO      []string `json:"nfo"`
+	NFOLinks []string `json:"nfolink"`
+}
+
+// IMDBRelease represents a single IMDB release entry.
+type IMDBRelease struct {
+	IMDB   string `json:"imdb"`
+	Title  string `json:"title"`
+	Rating string `json:"rating"`
+	Votes  string `json:"votes"`
+}
+
+// IMDBResponse holds the IMDB information for a release.
+type IMDBResponse struct {
+	Releases []IMDBRelease `json:"releases"`
+	Query    string        `json:"query"`
+}
+
 // HasNFO will return if the search-result has a NFO file.
 func (r *SearchResult) HasNFO() bool {
 	return r.HasNFOResponse == "yes"
@@ -62,7 +98,7 @@ func (r *SearchResult) HasSRS() bool {
 // For a list of available keywords see http://www.srrdb.com/help#keywords
 func Search(query string) (SearchResponse, error) {
 	client := http.DefaultClient
-	sURL := srrdbAPI + "/search/"
+	sURL := srrdbAPIURL + "/search/"
 	queries := strings.SplitSeq(query, " ")
 	for query := range queries {
 		sURL = sURL + url.QueryEscape(query) + "/"
@@ -71,6 +107,7 @@ func Search(query string) (SearchResponse, error) {
 	if err != nil {
 		return SearchResponse{}, err
 	}
+	defer response.Body.Close()
 	if response.StatusCode != 200 {
 		return SearchResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
@@ -78,10 +115,10 @@ func Search(query string) (SearchResponse, error) {
 	if err != nil {
 		return SearchResponse{}, err
 	}
-	var srrDBResponse SearchResponse
+	var searchResponse SearchResponse
 
-	err = json.Unmarshal(bytes, &srrDBResponse)
-	return srrDBResponse, err
+	err = json.Unmarshal(bytes, &searchResponse)
+	return searchResponse, err
 }
 
 // Download will return a SRR file by dirname.
@@ -91,6 +128,7 @@ func Download(dirname string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
+	defer response.Body.Close()
 	if response.StatusCode != 200 {
 		return []byte{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
@@ -242,4 +280,67 @@ func UploadStoredFile(fp, dirname, folder string, jar *cookiejar.Jar) (string, e
 		return "", errors.New("Failed to parse upload result.")
 	}
 	return res[1], nil
+}
+
+// Details will request the srrdb details API for a specific release and return their response.
+func Details(releasename string) (DetailsResponse, error) {
+	client := http.DefaultClient
+	sURL := srrdbAPIURL + "/details/" + url.QueryEscape(releasename)
+	response, err := client.Get(sURL)
+	if err != nil {
+		return DetailsResponse{}, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return DetailsResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
+	}
+	bytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return DetailsResponse{}, err
+	}
+	var detailsResponse DetailsResponse
+	err = json.Unmarshal(bytes, &detailsResponse)
+	return detailsResponse, err
+}
+
+// NFO will request the srrdb NFO API for a specific release and return their response.
+func NFO(releasename string) (NFOResponse, error) {
+	client := http.DefaultClient
+	sURL := srrdbAPIURL + "/nfo/" + url.QueryEscape(releasename)
+	response, err := client.Get(sURL)
+	if err != nil {
+		return NFOResponse{}, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return NFOResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
+	}
+	bytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return NFOResponse{}, err
+	}
+	var nfoResponse NFOResponse
+	err = json.Unmarshal(bytes, &nfoResponse)
+	return nfoResponse, err
+}
+
+// IMDB will request the srrdb IMDB API for a specific release and return their response.
+func IMDB(releasename string) (IMDBResponse, error) {
+	client := http.DefaultClient
+	sURL := srrdbAPIURL + "/imdb/" + url.QueryEscape(releasename)
+	response, err := client.Get(sURL)
+	if err != nil {
+		return IMDBResponse{}, err
+	}
+	defer response.Body.Close()
+	if response.StatusCode != 200 {
+		return IMDBResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
+	}
+	bytes, err := io.ReadAll(response.Body)
+	if err != nil {
+		return IMDBResponse{}, err
+	}
+	var imdbResponse IMDBResponse
+	err = json.Unmarshal(bytes, &imdbResponse)
+	return imdbResponse, err
 }
