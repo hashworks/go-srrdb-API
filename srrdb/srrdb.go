@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"net/http/cookiejar"
@@ -19,6 +18,7 @@ import (
 )
 
 const srrdbURL = "https://www.srrdb.com"
+const srrdbAPI = "https://api.srrdb.com/v1"
 
 // SearchResponse holds the results of a search.
 type SearchResponse struct {
@@ -50,27 +50,21 @@ type SRRUploadedFile struct {
 
 // HasNFO will return if the search-result has a NFO file.
 func (r *SearchResult) HasNFO() bool {
-	if r.HasNFOResponse == "yes" {
-		return true
-	}
-	return false
+	return r.HasNFOResponse == "yes"
 }
 
 // HasSRS will return if the search-result has a SRS file.
 func (r *SearchResult) HasSRS() bool {
-	if r.HasSRSResponse == "yes" {
-		return true
-	}
-	return false
+	return r.HasSRSResponse == "yes"
 }
 
 // Search will request the srrdb search API with the provided query and return their response.
 // For a list of available keywords see http://www.srrdb.com/help#keywords
 func Search(query string) (SearchResponse, error) {
 	client := http.DefaultClient
-	sURL := srrdbURL + "/api/search/"
-	queries := strings.Split(query, " ")
-	for _, query := range queries {
+	sURL := srrdbAPI + "/search/"
+	queries := strings.SplitSeq(query, " ")
+	for query := range queries {
 		sURL = sURL + url.QueryEscape(query) + "/"
 	}
 	response, err := client.Get(sURL)
@@ -80,7 +74,7 @@ func Search(query string) (SearchResponse, error) {
 	if response.StatusCode != 200 {
 		return SearchResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
-	bytes, err := ioutil.ReadAll(response.Body)
+	bytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return SearchResponse{}, err
 	}
@@ -100,7 +94,11 @@ func Download(dirname string) ([]byte, error) {
 	if response.StatusCode != 200 {
 		return []byte{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
-	body, err := ioutil.ReadAll(response.Body)
+	contentType := response.Header.Get("Content-Type")
+	if contentType != "application/octet-stream" {
+		return []byte{}, errors.New("Unexpected content type " + contentType)
+	}
+	body, err := io.ReadAll(response.Body)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -146,7 +144,7 @@ func containsValidLoginCookie(cookies []*http.Cookie) bool {
 }
 
 func srrdbURLStruct() *url.URL {
-	return &url.URL{Scheme: "http", Host: "www.srrdb.com", Path: "/"}
+	return &url.URL{Scheme: "https", Host: "www.srrdb.com", Path: "/"}
 }
 
 // UploadSRRs will upload one or more SRR files to the srrdb.
@@ -189,7 +187,7 @@ func UploadSRRs(fps []string, jar *cookiejar.Jar) (SRRUploadResponse, error) {
 	if response.StatusCode != 200 {
 		return SRRUploadResponse{}, errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
-	bytes, err := ioutil.ReadAll(response.Body)
+	bytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return SRRUploadResponse{}, err
 	}
@@ -235,7 +233,7 @@ func UploadStoredFile(fp, dirname, folder string, jar *cookiejar.Jar) (string, e
 	if response.StatusCode != 200 {
 		return "", errors.New("Unexpected return code " + strconv.Itoa(response.StatusCode) + ".")
 	}
-	bytes, err := ioutil.ReadAll(response.Body)
+	bytes, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", err
 	}
